@@ -7,6 +7,8 @@ var JwtStrategy = require('passport-jwt').Strategy;
 var ExtractJwt = require('passport-jwt').ExtractJwt;
 var jwt = require('jsonwebtoken'); // used to create, sign, and verify tokens
 
+var GitHubTokenStrategy = require('passport-github-token');
+
 var config = require('./config');
 
 exports.local = passport.use(new LocalStrategy(User.authenticate()));
@@ -66,3 +68,33 @@ exports.verifyIsAuthor = (req, res, next) => {
         })
         .catch(err => next(err));
 }
+
+exports.GitHubTokenStrategy = passport.use(new GitHubTokenStrategy({
+    clientID: config.github.clientId,
+    clientSecret: config.github.clientSecret
+}, (accessToken, refreshToken, profile, done) => {
+    User.findOne({githubId: profile.id}, (err, user) => {
+        if (err) {
+            return done(err, false);
+        }
+        if (!err && user !== null) {
+            return done(null, user)
+        }
+        else {
+            user = new User({ 
+                username: profile.displayName});
+                user.githubId = profile.id;
+                user.firstname = profile.name.givenName;
+                user.lastname = profile.name.familyName;
+                user.save((err, user) =>
+                {
+                    if (err) 
+                    return done(err, false);
+                    else
+                    return done(null, user);
+                })
+        }
+    })
+}
+
+))

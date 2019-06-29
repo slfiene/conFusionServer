@@ -11,6 +11,7 @@ var User = new Schema({
         type: String,
           default: ''
       },
+      githubId: String,
     admin:   {
         type: Boolean,
         default: false
